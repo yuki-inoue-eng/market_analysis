@@ -2,6 +2,7 @@ from datetime import datetime
 from oandapyV20 import API
 import oandapyV20.endpoints.instruments as instruments
 import math
+import pandas as pd
 
 
 class Client:
@@ -42,9 +43,15 @@ class Client:
                 candle["mid"]["h"],
                 candle["mid"]["l"],
                 candle["mid"]["c"],
-                candle["volume"],
+                candle["volume"]
             ])
-        return data
+        df = pd.DataFrame(data)
+        df.columns = ["Time", "Open", "High", "Low", "Close", "Volume"]
+        df["Open"] = df["Open"].astype(float)
+        df["High"] = df["High"].astype(float)
+        df["Low"] = df["Low"].astype(float)
+        df["Close"] = df["Close"].astype(float)
+        return df
 
     @staticmethod
     def __get_granularity_s(granularity: str):
