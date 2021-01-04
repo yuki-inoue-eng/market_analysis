@@ -2,3 +2,4 @@
 oanda_config.txt
 oanda/__pycache__/
 notebook/.ipynb_checkpoints
+data/

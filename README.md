@@ -1,1 +1,1 @@
-# market_analysis
+# fx_analysis
