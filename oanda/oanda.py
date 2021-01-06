@@ -1,8 +1,12 @@
 from datetime import datetime
 from oandapyV20 import API
+from oandapyV20 import V20Error
 import oandapyV20.endpoints.instruments as instruments
 import math
 import pandas as pd
+import asyncio
+import time
+import logging
 
 
 class Client:
@@ -52,6 +56,90 @@ class Client:
         df["Low"] = df["Low"].astype(float)
         df["Close"] = df["Close"].astype(float)
         return df
+
+    def get_order_books(self, instrument: str, date_from: datetime, date_to: datetime, vicinity: bool):
+        loop = asyncio.get_event_loop()
+        results = loop.run_until_complete(self.__get_order_books_base_async(instrument, date_from, date_to, vicinity))
+        results = [r for r in results if r is not None]
+        books = []
+        for r in results:
+            books.append(self.__convert_book_str_to_book_number(r))
+        return books  # None を除いた order book を返却
+
+    async def __get_order_books_base_async(self, instrument: str, date_from: datetime, date_to: datetime,
+                                           vicinity: bool):
+        # date_from 以降で最新の order book スナップショットが取られる時間を計算
+        timestamp_from = math.floor(date_from.timestamp())
+        timestamp_to = math.floor(date_to.timestamp())
+        SNAP_SHOT_INTERVAL_S = 1200
+        start_unix_time = timestamp_from + (SNAP_SHOT_INTERVAL_S - timestamp_from % SNAP_SHOT_INTERVAL_S)
+
+        # order_book を取得する時間の一覧
+        snap_shot_times = []
+        time = start_unix_time
+        while timestamp_to - time > 0:
+            snap_shot_times.append(datetime.fromtimestamp(time))
+            time += SNAP_SHOT_INTERVAL_S
+
+        # task の作成
+        tasks = [self.__get_order_book(instrument, t, vicinity) for t in snap_shot_times]
+        results = await asyncio.gather(*tasks)  # *List とすることで、アンパックしている
+        return results
+
+    async def __get_order_book(self, instrument: str, date_time: datetime, vicinity: bool):
+        params = {
+            "time": date_time.isoformat() + "Z"
+        }
+        r = instruments.InstrumentsOrderBook(instrument, params)
+        try:
+            resp = self.__recursive_request(r)  # レスポンスが返却されるまで一時停止する
+        except V20Error as err:
+            http_status_not_found = 404
+            if err.code == http_status_not_found:
+                return None
+            logging.error(err.msg)
+            return None
+        if vicinity:
+            range_n = 25
+            price = float(resp["orderBook"]["price"])
+            resp["orderBook"]["buckets"] = self.__extract_book_buckets_vicinity_of_price(
+                resp["orderBook"]["buckets"],
+                price,
+                range_n)
+        return resp["orderBook"]
+
+    def __recursive_request(self, request):
+        try:
+            resp = self.__api.request(request)
+        except V20Error as err:
+            http_status_too_many_requests = 429
+            if err.code == http_status_too_many_requests:
+                time.sleep(1)
+                return self.__recursive_request(request)
+            raise err
+        return resp
+
+    @staticmethod
+    def __convert_book_str_to_book_number(book):
+        book["unixTime"] = float(book["unixTime"])
+        book["price"] = float(book["price"])
+        book["bucketWidth"] = float(book["bucketWidth"])
+        for b in book["buckets"]:
+            b["price"] = float(b["price"])
+            b["longCountPercent"] = float(b["longCountPercent"])
+            b["shortCountPercent"] = float(b["shortCountPercent"])
+        return book
+
+    @staticmethod
+    def __extract_book_buckets_vicinity_of_price(buckets: list, price: float, n: int):
+        i = 0
+        central = 0
+        for b in buckets:
+            if float(b["price"]) > price:
+                central = i
+                break
+            i += 1
+        return buckets[(central - n):(central + n)]
 
     @staticmethod
     def __get_granularity_s(granularity: str):
