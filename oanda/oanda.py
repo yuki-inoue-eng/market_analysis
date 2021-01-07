@@ -31,8 +31,8 @@ class Client:
             if _to > timestamp_to:
                 _to = timestamp_to
             params = {
-                "from": datetime.fromtimestamp(_from).isoformat(),
-                "to": datetime.fromtimestamp(_to).isoformat(),
+                "from": datetime.fromtimestamp(_from).isoformat() + "Z",
+                "to": datetime.fromtimestamp(_to).isoformat() + "Z",
                 "granularity": granularity
             }
             r = instruments.InstrumentsCandles(instrument, params)

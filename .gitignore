@@ -1,3 +1,4 @@
+.DS_Store
 .idea/
 oanda_config.txt
 oanda/__pycache__/
