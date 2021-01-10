@@ -16,7 +16,7 @@ def io_bound(file_name):
 
 def cpu_bound():
     i = 0
-    while i < 500000000:
+    while i < 10000000:
         i = i + 1 - 2 + 3 - 4 + 5
     return "Future is done!"
 

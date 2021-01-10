@@ -1,11 +1,17 @@
+from datetime import datetime
 from enum import Enum
-
 import instruments as ins
 
 
 class Type(Enum):
     MARKET = "market"
     MARKET_IF_TOUCHED = "market_if_touched"
+
+
+class EnteredType(Enum):
+    MARKET = "market"
+    LIMIT = "limit"
+    STOP = "stop"
 
 
 class Side(Enum):
@@ -18,6 +24,14 @@ class Status(Enum):
     CANCELED = "canceled"
     ENTERED = "entered"
     EXITED = "exited"
+
+
+class InvalidExitPriceException(Exception):
+    pass
+
+
+class InvalidOrderCancelException(Exception):
+    pass
 
 
 class Order:
@@ -33,37 +47,62 @@ class Order:
                  stop_price: float):
 
         # validate limit_price and stop_price
-        if self.__side == Side.BUY and (price > stop_price or price < limit_price):
-            pass  # エラーを返す。不正な利確、損切り設定
-        if self.__side == Side.SELL and (price < stop_price or price > limit_price):
-            pass  # エラーを返す。不正な利確、損切り設定
-        if ins.price_to_pips(self.__instrument, abs(price - stop_price)) < self.MIN_STOP_DISTANCE_PIPS:
-            pass  # エラーを返す。ストップ幅が足りない
-        if ins.price_to_pips(self.__instrument, abs(price - limit_price)) < self.MIN_LIMIT_DISTANCE_PIPS:
-            pass  # エラーを返す。リミット幅が足りない
+        if self._side is Side.BUY and (price > stop_price or price < limit_price):
+            raise InvalidExitPriceException("invalid stop_price or limit_price.")
+        if self._side is Side.SELL and (price < stop_price or price > limit_price):
+            raise InvalidExitPriceException("invalid stop_price or limit_price.")
+        if ins.price_to_pips(self._instrument, abs(price - stop_price)) < self.MIN_STOP_DISTANCE_PIPS:
+            raise InvalidExitPriceException("stop distance is narrow.")
+        if ins.price_to_pips(self._instrument, abs(price - limit_price)) < self.MIN_LIMIT_DISTANCE_PIPS:
+            raise InvalidExitPriceException("limit distance is narrow.")
 
-        self.__id = None
-        self.__price = price
-        self.__limit_price = limit_price
-        self.__stop_price = stop_price
-        self.__instrument = instrument
-        self.__side = side
-        self.__order_type = order_type
-        self.__unit = unit
-        self.__status = Status.PENDING
+        self.id = None
+        self._price = price
+        self._stop_price = stop_price
+        self._limit_price = limit_price
+        self._instrument = instrument
+        self._side = side
+        self._order_type = order_type
+        self._unit = unit
+        self.status = Status.PENDING
 
-    def get_order_id(self):
-        return self.__id
-
-    # broker に登録する時に呼び出してください
-    def set_order_id(self, order_id: int):
-        self.__id = order_id
-
-    def get_status(self):
-        return self.__status
-
-    def set_status(self, status: Status):
-        self.__status = status
+        self.activated_datetime = None
+        self.entered_datetime = None
+        self.closed_datetime = None
 
     def is_active(self):
-        return self.__status == Status.PENDING or self.__status == Status.ENTERED
+        return self.activated_datetime is not None and (self.status is Status.PENDING or self.status is Status.ENTERED)
+
+    def cancel(self, date_time: datetime):
+        if self.status != Status.PENDING:
+            raise InvalidOrderCancelException("order status is not PENDING: {}".format(self.status))
+        self.status = Status.CANCELED
+        self.closed_datetime = date_time
+
+    @property
+    def price(self):
+        return self._price
+
+    @property
+    def stop_price(self):
+        return self._stop_price
+
+    @property
+    def limit_price(self):
+        return self._limit_price
+
+    @property
+    def instrument(self):
+        return self._instrument
+
+    @property
+    def side(self):
+        return self._side
+
+    @property
+    def order_type(self):
+        return self._order_type
+
+    @property
+    def unit(self):
+        return self._unit

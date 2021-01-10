@@ -1,7 +1,7 @@
 import time
 import pandas as pd
-from orders import Order, Status
-
+import logging
+from orders import Order, Status, InvalidOrderCancelException
 
 
 class Cerebro:
@@ -12,8 +12,7 @@ class Cerebro:
         self.__broker = Broker()
 
     def run(self):
-        # some heavy processing
-        time.sleep(3)
+        pass
 
 
 class ID_manager:
@@ -40,20 +39,34 @@ class Broker:
 
     def register_order(self, order: Order):
         order_id = self.__order_id_manager.generate_unique_id()
-        order.set_order_id(order_id)
-        self.__orders[order.get_order_id()] = order
+        order.id = order_id
+        self.__orders[order.id] = order
 
     def cancel_order(self, order: Order):
-        order.set_status(Status.CANCELED)
-        if self.__orders in order.get_order_id():
-            self.__orders.pop(order.get_order_id())
-        return
+        if self.__orders in order.id:
+            try:
+                order.cancel(self.__current_bar.date_time)  # TODO: date_time を正しく引数に渡す
+            except InvalidOrderCancelException as err:
+                logging.warning("failed to cancel order: {}".format(err))
+                return
+            self.__orders.pop(order.id)
 
-    def onBars(self, recorder):
+    def get_pending_orders(self):
+        pending_orders = []
+        for o in self.__orders:
+            if o.get_status is Status.PENDING:
+                pending_orders.append(o)
+        return pending_orders
+
+    def get_entered_orders(self):
+        entered_orders = []
+        for o in self.__orders:
+            if o.get_status is Status.ENTERED:
+                entered_orders.append(o)
+        return entered_orders
+
+    def on_bars(self, recorder):
         pass
-
-
-
 
 
 class Recorder:
