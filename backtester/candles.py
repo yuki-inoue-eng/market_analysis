@@ -7,5 +7,5 @@ class Candle:
         self.close = candle[4]
         self.volume = candle[5]
 
-    def include(self, price: float):
+    def is_include(self, price: float):
         return self.high > price and price < self.low

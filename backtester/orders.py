@@ -69,6 +69,9 @@ class Order:
         self.activated_datetime = None
         self.entered_datetime = None
         self.closed_datetime = None
+        self.executed_enter_price = None  # 注文が執行された価格。約定価格ではない
+        self.executed_exited_price = None  # 注文が執行された価格。約定価格ではない
+        self.exited_order_type = None
 
     def is_active(self):
         return self.activated_datetime is not None and (self.status is Status.PENDING or self.status is Status.ENTERED)

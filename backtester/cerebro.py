@@ -10,7 +10,7 @@ class InvalidFeedException(Exception):
 
 class Cerebro:
     def __init__(self, feed: list, strategy: Strategy):
-        self.__candles = self.__convert_to_candles(feed)
+        self.__candles = self.__convert_feed_to_candles(feed)
         self.__strategy = strategy
         self.__broker = Broker()
         self.__recorder = Recorder()
@@ -26,14 +26,14 @@ class Cerebro:
             broker.on_candles(recorder)
 
     @staticmethod
-    def __convert_to_candles(feed: list):
-        if feed[0] is not ["DateTime", "Open", "High", "Low", "Close", "Volume"]:
+    def __convert_feed_to_candles(feed: list):
+        header = feed.pop(0)  # remove header
+        if header is not ["DateTime", "Open", "High", "Low", "Close", "Volume"]:
             raise InvalidFeedException("invalid feed columns.")
-        feed.pop(0)  # remove header
         candles = []
-        feed_list = feed
-        for f in feed_list:
+        for f in feed:
             candles.append(Candle(f))
+        candles = sorted(candles, key=lambda x: x[0])  # sort date_time
         return candles
 
 
