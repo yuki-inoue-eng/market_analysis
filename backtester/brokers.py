@@ -1,6 +1,6 @@
 import logging
 from instruments import Instrument
-from orders import Order, Status, Side, Type, InvalidOrderCancelException
+from orders import Order, Status, Side, ExitedType, InvalidOrderCancelException
 
 
 class ID_manager:
@@ -31,11 +31,24 @@ class Broker:
         order.id = order_id
         self.__orders[order.id] = order
 
-    def cancel_order(self, order: Order):
-        candle = self.__current_candle
+    def exit_order(self, order: Order):
         if self.__orders in order.id:
+            current_date_time = self.__current_candle.date_time
+            target_exit_price = self.__current_candle.close
+            execution_price = self.__spread_calculator.calculate_market_exit_execution_price(order, target_exit_price)
+            order.status = Status.EXITED
+            order.exited_datetime = current_date_time
+            order.exited_price = target_exit_price
+            order.executed_enter_price = execution_price
+            order.exited_type = ExitedType.MARKET
+            self.__orders.pop(order.id)
+
+    def cancel_order(self, order: Order):
+        # TODO order キャンセルの処理を全てこちらへ移行する
+        if self.__orders in order.id and order.status is Status.PENDING:
+            current_date_time = self.__current_candle.date_time
             try:
-                order.cancel(candle.date_time)
+                order.cancel(current_date_time)
             except InvalidOrderCancelException as err:
                 logging.warning("failed to cancel order: {}".format(err))
                 return
@@ -70,21 +83,26 @@ class Broker:
             if order.status is Status.PENDING and candle.is_include(enter_execution_price):
                 order.status = Status.ENTERED
                 order.entered_datetime = candle.date_time
+                order.entered_price = order.price
                 order.executed_enter_price = enter_execution_price
 
             # stop
             if order.status is Status.ENTERED and candle.is_include(stop_execution_price):
                 order.status = Status.EXITED
                 order.closed_datetime = candle.date_time
+                order.exited_price = order.stop_price
                 order.executed_exited_price = stop_execution_price
-                order.exited_order_type = Type.MARKET_IF_TOUCHED
+                order.exited_type = ExitedType.STOP
+                self.__orders.pop(order.id)
 
             # limit
             if order.status is Status.ENTERED and candle.is_include(limit_execution_price):
                 order.status = Status.EXITED
                 order.closed_datetime = candle.date_time
+                order.exited_price = order.limit_price
                 order.executed_exited_price = limit_execution_price
-                order.exited_order_type = Type.MARKET_IF_TOUCHED
+                order.exited_type = ExitedType.LIMIT
+                self.__orders.pop(order.id)
 
 
 class SpreadsCalculator:
@@ -103,10 +121,10 @@ class SpreadsCalculator:
     def get_spread(self, instrument: Instrument):
         return self.__table[instrument]
 
-    def calculate_enter_execution_price(self, order):
+    def calculate_enter_execution_price(self, order: Order):
         return self.__calculate_order_execution_price(order.side, order.price, order.instrument)
 
-    def calculate_stop_execution_price(self, order):
+    def calculate_stop_execution_price(self, order: Order):
         side = None
         if order.side == Side.SELL:
             side = Side.BUY
@@ -114,13 +132,21 @@ class SpreadsCalculator:
             side = Side.SELL
         return self.__calculate_order_execution_price(side, order.stop_price, order.instrument)
 
-    def calculate_limit_execution_price(self, order):
+    def calculate_limit_execution_price(self, order: Order):
         side = None
         if order.side == Side.SELL:
             side = Side.BUY
         if order.side == Side.BUY:
             side = Side.SELL
         return self.__calculate_order_execution_price(side, order.limit_price, order.instrument)
+
+    def calculate_market_exit_execution_price(self, order: Order, price: float):
+        side = None
+        if order.side == Side.SELL:
+            side = Side.BUY
+        if order.side == Side.BUY:
+            side = Side.SELL
+        return self.__calculate_order_execution_price(side, price, order.instrument)
 
     def __calculate_order_execution_price(self, side: Side, target_price: float, instrument: Instrument):
         half_spread = self.__table[instrument]
