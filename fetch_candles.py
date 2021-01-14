@@ -10,10 +10,10 @@ if __name__ == '__main__':
     oanda = Client(api_key, "", "practice")
     UTC = datetime.timezone.utc
     date_from = datetime.datetime(2020, 1, 1, 0, 0, tzinfo=UTC)
-    date_to = datetime.datetime(2020, 1, 5, 0, 0, tzinfo=UTC)
+    date_to = datetime.datetime(2021, 1, 1, 0, 0, tzinfo=UTC)
     start = time.time()
-    candles_df = oanda.get_candles("USD_JPY", date_from, date_to, "M5")
+    candles_df = oanda.get_candles("NZD_USD", date_from, date_to, "S5")
     elapsed_time = time.time() - start
     print(elapsed_time)
     candles_df.columns = ["DateTime", "Open", "High", "Low", "Close", "Volume"]
-    candles_df.to_csv("./data/candles/USD_JPY_S5_2020.csv", index=False)
+    candles_df.to_csv("./data/candles/NZD_USD_S5_2020.csv", index=False)

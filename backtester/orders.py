@@ -71,19 +71,12 @@ class Order:
         self.closed_datetime = None
         self.entered_price = None  # 約定価格
         self.exited_price = None  # 約定価格
-        self.executed_enter_price = None  # 約定価格ではない
-        self.executed_exited_price = None  # 約定価格ではない
+        self.executed_enter_price = None  # 注文実行価格
+        self.executed_exited_price = None  # 注文実行価格
         self.exited_type = None
 
     def is_active(self):
         return self.activated_datetime is not None and (self.status is Status.PENDING or self.status is Status.ENTERED)
-
-    def cancel(self, date_time: datetime):
-        # TODO order キャンセルの処理を全て broker へ移行する
-        if self.status != Status.PENDING:
-            raise InvalidOrderCancelException("order status is not PENDING: {}".format(self.status))
-        self.status = Status.CANCELED
-        self.closed_datetime = date_time
 
     @property
     def price(self):

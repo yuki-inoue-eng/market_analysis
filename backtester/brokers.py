@@ -1,6 +1,6 @@
-import logging
 from instruments import Instrument
-from orders import Order, Status, Side, ExitedType, InvalidOrderCancelException
+from recorders import Recorder
+from orders import Order, Status, Side, ExitedType
 
 
 class ID_manager:
@@ -17,11 +17,12 @@ class ID_manager:
 
 
 class Broker:
-    def __init__(self):
+    def __init__(self, recorder: Recorder):
         self.__current_candle = None
         self.__orders = {}  # key: id(int), value: order(order)
         self.__order_id_manager = ID_manager()
         self.__spread_calculator = SpreadsCalculator()
+        self.__recorder = recorder
 
     def set_current_candle(self, candle):
         self.__current_candle = candle
@@ -30,6 +31,7 @@ class Broker:
         order_id = self.__order_id_manager.generate_unique_id()
         order.id = order_id
         self.__orders[order.id] = order
+        self.__recorder.record(order)
 
     def exit_order(self, order: Order):
         if self.__orders in order.id:
@@ -44,14 +46,10 @@ class Broker:
             self.__orders.pop(order.id)
 
     def cancel_order(self, order: Order):
-        # TODO order キャンセルの処理を全てこちらへ移行する
         if self.__orders in order.id and order.status is Status.PENDING:
             current_date_time = self.__current_candle.date_time
-            try:
-                order.cancel(current_date_time)
-            except InvalidOrderCancelException as err:
-                logging.warning("failed to cancel order: {}".format(err))
-                return
+            order.status = Status.CANCELED
+            order.closed_datetime = current_date_time
             self.__orders.pop(order.id)
 
     def get_pending_orders(self):
@@ -68,9 +66,8 @@ class Broker:
                 entered_orders.append(o)
         return entered_orders
 
-    def on_candles(self, recorder):
+    def on_candles(self):
         self.__process_orders()
-        # TODO: レコーディング処理
 
     def __process_orders(self):
         candle = self.__current_candle
