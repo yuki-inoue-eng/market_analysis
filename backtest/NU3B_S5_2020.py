@@ -24,7 +24,7 @@ class NU3BStrategy(Strategy):
             "spreadAllowance": -1,
             "profitDistance": 9,
             "stopLossDistance": 5,
-            "stopOrders": {0.8, 0.8}
+            "stopOrders": {0.8, 1.0}
         }
 
     def on_candle(self, broker: Broker):

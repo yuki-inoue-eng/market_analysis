@@ -1,4 +1,3 @@
-
 if __name__ == '__main__':
     import configparser
     import datetime
@@ -15,6 +14,14 @@ if __name__ == '__main__':
     start = time.time()
     candles_df = oanda.get_candles("NZD_USD", date_from, date_to, "S5")
     elapsed_time = time.time() - start
-    print(elapsed_time)
     candles_df.columns = ["DateTime", "Open", "High", "Low", "Close", "Volume"]
-    candles_df.to_csv("./data/candles/NZD_USD_S5_2020.csv", index=False)
+    candles_df = candles_df.set_index("DateTime")
+    candles_df = candles_df.resample("1T").agg({
+        "Open": "first",
+        "High": "max",
+        "Low": "min",
+        "Close": "last",
+        "Volume": "sum"
+    })
+    candles_df = candles_df.interpolate()
+    candles_df.to_csv("./data/candles/NZD_USD_S5_2020.csv")

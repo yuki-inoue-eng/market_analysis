@@ -50,7 +50,7 @@ class Client:
                 candle["volume"]
             ])
         df = pd.DataFrame(data)
-        df.columns = ["Time", "Open", "High", "Low", "Close", "Volume"]
+        df.columns = ["DateTime", "Open", "High", "Low", "Close", "Volume"]
         df["Open"] = df["Open"].astype(float)
         df["High"] = df["High"].astype(float)
         df["Low"] = df["Low"].astype(float)
