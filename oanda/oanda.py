@@ -132,13 +132,11 @@ class Client:
 
     @staticmethod
     def __extract_book_buckets_vicinity_of_price(buckets: list, price: float, n: int):
-        i = 0
         central = 0
         for b in buckets:
             if float(b["price"]) > price:
-                central = i
                 break
-            i += 1
+            central += 1
         return buckets[(central - n):(central + n)]
 
     @staticmethod

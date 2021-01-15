@@ -30,11 +30,9 @@ def is_order_book_update_time(date_time: datetime):
 
 
 def divide_buckets_up_and_down(buckets: list, price: float):
-    i = 0
     central = 0
     for b in buckets:
         if b["price"] > price:
-            central = i
             break
-        i += 1
+        central += 1
     return {"short": buckets[:central], "long": buckets[central:]}

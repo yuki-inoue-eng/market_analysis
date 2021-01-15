@@ -1,4 +1,5 @@
 from enum import Enum
+import math
 
 
 class Instrument(Enum):
@@ -35,21 +36,23 @@ def pips_to_price(instrument: Instrument, pips: float):
 
 
 def price_to_pips(instrument: Instrument, price: float):
+    pips = 0
     if instrument == Instrument.USD_JPY:
-        return price * 100
+        pips = price * 100
     elif instrument == Instrument.EUR_JPY:
-        return price * 100
+        pips = price * 100
     elif instrument == Instrument.AUD_JPY:
-        return price * 100
+        pips = price * 100
     elif instrument == Instrument.GBP_JPY:
-        return price * 100
+        pips = price * 100
     elif instrument == Instrument.EUR_USD:
-        return price * 10000
+        pips = price * 10000
     elif instrument == Instrument.GBP_USD:
-        return price * 10000
+        pips = price * 10000
     elif instrument == Instrument.AUD_USD:
-        return price * 10000
+        pips = price * 10000
     elif instrument == Instrument.NZD_USD:
-        return price * 10000
+        pips = price * 10000
     elif instrument == Instrument.EUR_GBP:
-        return price * 10000
+        pips = price * 10000
+    return math.ceil(pips*10)/10  # 下二桁を切上

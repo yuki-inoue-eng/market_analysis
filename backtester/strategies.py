@@ -1,12 +1,13 @@
-from brokers import Broker
+from .brokers import Broker
+from .candles import Candle
 
 
 class Strategy:
     def __init__(self):
-        self.__current_candle = None
+        self.current_candle = None
 
-    def set_current_candle(self, candle):
-        self.__current_candle = candle
+    def set_current_candle(self, candle: Candle):
+        self.current_candle = candle
 
     def on_candle(self, broker: Broker):
         pass

@@ -1,6 +1,5 @@
-from datetime import datetime
 from enum import Enum
-import instruments as ins
+from .instruments import Instrument, price_to_pips
 
 
 class Type(Enum):
@@ -38,23 +37,13 @@ class Order:
     MIN_STOP_DISTANCE_PIPS = 5
     MIN_LIMIT_DISTANCE_PIPS = 5
 
-    def __init__(self, instrument: ins.Instrument,
+    def __init__(self, instrument: Instrument,
                  side: Side,
                  order_type: Type,
                  unit: int,
                  price: float,
                  limit_price: float,
                  stop_price: float):
-
-        # validate limit_price and stop_price
-        if self._side is Side.BUY and (price > stop_price or price < limit_price):
-            raise InvalidExitPriceException("invalid stop_price or limit_price.")
-        if self._side is Side.SELL and (price < stop_price or price > limit_price):
-            raise InvalidExitPriceException("invalid stop_price or limit_price.")
-        if ins.price_to_pips(self._instrument, abs(price - stop_price)) < self.MIN_STOP_DISTANCE_PIPS:
-            raise InvalidExitPriceException("stop distance is narrow.")
-        if ins.price_to_pips(self._instrument, abs(price - limit_price)) < self.MIN_LIMIT_DISTANCE_PIPS:
-            raise InvalidExitPriceException("limit distance is narrow.")
 
         self.id = None
         self._price = price
@@ -74,6 +63,22 @@ class Order:
         self.executed_enter_price = None  # 注文実行価格
         self.executed_exited_price = None  # 注文実行価格
         self.exited_type = None
+
+        # validate limit_price and stop_price
+        if self._side is Side.BUY and (price < stop_price or price > limit_price):
+            raise InvalidExitPriceException(
+                "invalid stop_price or limit_price: price = {}, stop = {}, limit = {}".format(price, stop_price,
+                                                                                              limit_price))
+        if self._side is Side.SELL and (price > stop_price or price < limit_price):
+            raise InvalidExitPriceException(
+                "invalid stop_price or limit_price: price = {}, stop = {}, limit = {}".format(price, stop_price,
+                                                                                              limit_price))
+        if price_to_pips(self._instrument, abs(price - stop_price)) < self.MIN_STOP_DISTANCE_PIPS:
+            raise InvalidExitPriceException("stop distance is narrow: distance = {}".format(
+                price_to_pips(self._instrument, abs(price - stop_price))))
+        if price_to_pips(self._instrument, abs(price - limit_price)) < self.MIN_LIMIT_DISTANCE_PIPS:
+            raise InvalidExitPriceException("limit distance is narrow: distance = {}".format(
+                price_to_pips(self._instrument, abs(price - stop_price))))
 
     def is_active(self):
         return self.activated_datetime is not None and (self.status is Status.PENDING or self.status is Status.ENTERED)
