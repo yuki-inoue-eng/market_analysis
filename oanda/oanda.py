@@ -23,6 +23,7 @@ class Client:
     def get_candles(self, instrument: str, date_from: datetime, date_to: datetime, granularity: str):
         timestamp_from = math.floor(date_from.timestamp())
         timestamp_to = math.floor(date_to.timestamp())
+
         granularity_s = self.__get_granularity_s(granularity)
         candles = []
         while timestamp_to - timestamp_from > 0:
@@ -31,8 +32,8 @@ class Client:
             if _to > timestamp_to:
                 _to = timestamp_to
             params = {
-                "from": datetime.fromtimestamp(_from).isoformat() + "Z",
-                "to": datetime.fromtimestamp(_to).isoformat() + "Z",
+                "from": datetime.utcfromtimestamp(_from).isoformat() + "Z",
+                "to": datetime.utcfromtimestamp(_to).isoformat() + "Z",
                 "granularity": granularity
             }
             r = instruments.InstrumentsCandles(instrument, params)
@@ -78,7 +79,7 @@ class Client:
         snap_shot_times = []
         time = start_unix_time
         while timestamp_to - time > 0:
-            snap_shot_times.append(datetime.fromtimestamp(time))
+            snap_shot_times.append(datetime.utcfromtimestamp(time))
             time += SNAP_SHOT_INTERVAL_S
 
         # task の作成

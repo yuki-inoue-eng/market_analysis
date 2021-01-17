@@ -9,9 +9,8 @@ if __name__ == '__main__':
     config.read("./oanda_config.txt")
     api_key = config["Practice"]["api_key"]
     oanda = Client(api_key, "", "practice")
-    UTC = datetime.timezone.utc
-    date_from = datetime.datetime(2020, 12, 13, 0, 0, tzinfo=UTC)
-    date_to = datetime.datetime(2021, 1, 13, 0, 0, tzinfo=UTC)
+    date_from = datetime.datetime(2021, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
+    date_to = datetime.datetime(2021, 1, 16, 0, 0, tzinfo=datetime.timezone.utc)
     start = time.time()
     candles_df = oanda.get_candles("NZD_USD", date_from, date_to, "S5")
     elapsed_time = time.time() - start

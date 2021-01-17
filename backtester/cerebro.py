@@ -1,8 +1,10 @@
+from datetime import timedelta
 from .strategies import Strategy
 from .brokers import Broker
 from .candles import Candle
 from .recorders import Recorder
 from .orders import Status
+import math
 
 
 class InvalidFeedException(Exception):
@@ -20,15 +22,27 @@ class Cerebro:
         strategy = self.__strategy
         broker = self.__broker
         for candle in self.__candles:
+            if candle.is_holiday():
+                continue
             strategy.set_current_candle(candle)
             broker.set_current_candle(candle)
             strategy.on_candle(broker)
             broker.on_candles()
 
-        # TODO: debug
+        # TODO: trade log
         for order in self.recorder.orders.values():
             if order.status is Status.EXITED:
-                print("side:{}  entered:{}  exited:{}  exitedType{}".format(order.side, order.entered_datetime, order.closed_datetime, order.exited_type))
+                print("side:{} entered_price:{} exited_price:{}  entered:{}  exited:{}  exitedType:{}  memo:{} memo2:{} memo3:{}".format(
+                    order.side,
+                    round(order.entered_price*100000)/100000,
+                    round(order.exited_price*100000)/100000,
+                    order.entered_datetime,
+                    order.closed_datetime,
+                    order.exited_type,
+                    order.memo,
+                    order.memo2,
+                    order.memo3,
+                ))
 
     @staticmethod
     def __convert_feed_to_candles(feed: list):

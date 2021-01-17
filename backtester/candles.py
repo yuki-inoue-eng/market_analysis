@@ -1,9 +1,10 @@
-from datetime import datetime, date
+from datetime import datetime, timezone
+from .orders import Side
 
 
 class Candle:
     def __init__(self, candle: list):
-        self.date_time = datetime.strptime(candle[0], '%Y-%m-%d %H:%M:%S')
+        self.date_time = datetime.strptime(candle[0]+"+0000", '%Y-%m-%d %H:%M:%S%z')
         self.open = float(candle[1])
         self.high = float(candle[2])
         self.low = float(candle[3])
@@ -11,7 +12,19 @@ class Candle:
         self.volume = float(candle[5])
 
     def is_include(self, price: float):
-        return self.high > price > self.low
+        return self.high >= price >= self.low
+
+    def is_touch_stop(self, order_type: Side, stop_price: float):
+        if order_type is Side.SELL:
+            return self.high >= stop_price
+        if order_type is Side.BUY:
+            return self.low <= stop_price
+
+    def is_touch_limit(self, order_type: Side, limit_price: float):
+        if order_type is Side.SELL:
+            return self.low <= limit_price
+        if order_type is Side.BUY:
+            return self.high >= limit_price
 
     def is_holiday(self):
         today = self.date_time.date()

@@ -83,7 +83,7 @@ class Broker:
                 order.executed_enter_price = enter_execution_price
 
             # stop
-            if order.status is Status.ENTERED and candle.is_include(stop_execution_price):
+            if order.status is Status.ENTERED and candle.is_touch_stop(order.side, stop_execution_price):
                 order.status = Status.EXITED
                 order.closed_datetime = candle.date_time
                 order.exited_price = order.stop_price
@@ -92,7 +92,7 @@ class Broker:
                 self.__orders.pop(order.id)
 
             # limit
-            if order.status is Status.ENTERED and candle.is_include(limit_execution_price):
+            if order.status is Status.ENTERED and candle.is_touch_limit(order.side, limit_execution_price):
                 order.status = Status.EXITED
                 order.closed_datetime = candle.date_time
                 order.exited_price = order.limit_price
@@ -145,7 +145,7 @@ class SpreadsCalculator:
         return self.__calculate_order_execution_price(side, price, order.instrument)
 
     def __calculate_order_execution_price(self, side: Side, target_price: float, instrument: Instrument):
-        half_spread_price = pips_to_price(instrument, self.__table[instrument])
+        half_spread_price = pips_to_price(instrument, self.__table[instrument])/2
         if side is Side.SELL:
             return target_price + half_spread_price
         if side is Side.BUY:

@@ -64,6 +64,10 @@ class Order:
         self.executed_exited_price = None  # 注文実行価格
         self.exited_type = None
 
+        self.memo = ""
+        self.memo2 = ""
+        self.memo3 = ""
+
         # validate limit_price and stop_price
         if self._side is Side.BUY and (price < stop_price or price > limit_price):
             raise InvalidExitPriceException(

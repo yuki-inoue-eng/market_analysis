@@ -2,7 +2,7 @@ import time
 import json
 import math
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from csv import reader
 from oanda import fx_lib
 from backtester.cerebro import Cerebro
@@ -16,15 +16,15 @@ class NU3BStrategy(Strategy):
     def __init__(self, order_books: dict):
         super().__init__()
         self.__order_books = order_books
-        self.__sliding_minutes = 1
+        self.__sliding_minutes = 5
         self.__instrument = Instrument.NZD_USD
 
         # params
         self.__params = {
-            "spreadAllowance": -1,
-            "profitDistance": 9,
-            "stopLossDistance": 5,
-            "stopOrders": {0.8, 1.0}
+            "spreadAllowance": -2.2,
+            "profitDistance": 14,
+            "stopLossDistance": 9,
+            "stopOrders": [0.7, 1.1, 1.1]
         }
 
     def on_candle(self, broker: Broker):
@@ -33,7 +33,7 @@ class NU3BStrategy(Strategy):
             self.close_all_entered_orders(broker)
         if self.is_lambda_invoke_time() and not self.is_restraint_time_zone():
             self.cancel_all_pending_orders(broker)
-            current_price = self.current_candle.close
+            current_price = self.current_candle.open
             time_stamp_str = str(math.floor(self.get_current_order_book_time_stamp()))
             if not (time_stamp_str in self.__order_books):
                 return
@@ -45,7 +45,8 @@ class NU3BStrategy(Strategy):
                 self.__params,
                 buckets,
                 current_price,
-                target_range=10)
+                target_range=10,
+            )
 
             for order in new_orders:
                 broker.register_order(order)
@@ -85,34 +86,38 @@ class NU3BStrategy(Strategy):
         # short order
         for i in range(target_range):
             activatable = True
-            j = 0
-            for so in params["stopOrders"]:
+            for j in range(len(params["stopOrders"])):
+                so = params["stopOrders"][j]
                 if short[i + j]["shortCountPercent"] < so:
                     activatable = False
                     break
-                j += 1
             if activatable:
                 enter_price = short[i]["price"] + pips_to_price(instrument, params["spreadAllowance"])
                 limit_price = enter_price - pips_to_price(instrument, params["profitDistance"])
                 stop_price = enter_price + pips_to_price(instrument, params["stopLossDistance"])
                 order = Order(instrument, Side.SELL, Type.MARKET_IF_TOUCHED, 1, enter_price, limit_price, stop_price)
+                order.memo = short[i]
+                order.memo2 = short[i + 1]
+                order.memo3 = short[i + 2]
                 orders.append(order)
                 break
 
         # long orders
         for i in range(target_range):
             activatable = True
-            j = 0
-            for lo in params["stopOrders"]:
+            for j in range(len(params["stopOrders"])):
+                lo = params["stopOrders"][j]
                 if long[i + j]["longCountPercent"] < lo:
                     activatable = False
                     break
-                j += 1
             if activatable:
                 enter_price = long[i]["price"] - pips_to_price(instrument, params["spreadAllowance"])
                 limit_price = enter_price + pips_to_price(instrument, params["profitDistance"])
                 stop_price = enter_price - pips_to_price(instrument, params["stopLossDistance"])
                 order = Order(instrument, Side.BUY, Type.MARKET_IF_TOUCHED, 1, enter_price, limit_price, stop_price)
+                order.memo = long[i]
+                order.memo2 = long[i + 1]
+                order.memo3 = long[i + 2]
                 orders.append(order)
                 break
 
@@ -136,4 +141,4 @@ if __name__ == "__main__":
     print("Execution time: {}".format(time.time() - start))
     print("Total number of trades: {}".format(cerebro.recorder.total_number_of_trades))
     print("Total total_profit_pips: {} pips".format(cerebro.recorder.total_profit_pips))
-    print("win_rate: {}".format(cerebro.recorder.win_rate))
+    print("Win rate: {}".format(cerebro.recorder.win_rate))
