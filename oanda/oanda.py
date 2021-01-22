@@ -122,6 +122,9 @@ class Client:
 
     @staticmethod
     def __convert_book_str_to_book_number(book):
+        if not ("unixTime" in book):
+            date_time = datetime.strptime(book["time"].replace("Z") + "+0000", '%Y-%m-%dT%H:%M:%S%z')
+            book["unixTime"] = date_time.timestamp()
         book["unixTime"] = float(book["unixTime"])
         book["price"] = float(book["price"])
         book["bucketWidth"] = float(book["bucketWidth"])
