@@ -109,6 +109,57 @@ class Client:
                 range_n)
         return resp["orderBook"]
 
+    def get_position_books(self, instrument: str, date_from: datetime, date_to: datetime, vicinity: bool):
+        loop = asyncio.get_event_loop()
+        results = loop.run_until_complete(self.__get_position_books_base_async(instrument, date_from, date_to, vicinity))
+        results = [r for r in results if r is not None]
+        books = []
+        for r in results:
+            books.append(self.__convert_book_str_to_book_number(r))
+        return books  # None を除いた order book を返却
+
+    async def __get_position_books_base_async(self, instrument: str, date_from: datetime, date_to: datetime,
+                                             vicinity: bool):
+        # date_from 以降で最新の position book スナップショットが取られる時間を計算
+        timestamp_from = math.floor(date_from.timestamp())
+        timestamp_to = math.floor(date_to.timestamp())
+        SNAP_SHOT_INTERVAL_S = 1200
+        start_unix_time = timestamp_from + (SNAP_SHOT_INTERVAL_S - timestamp_from % SNAP_SHOT_INTERVAL_S)
+
+        # position_book を取得する時間の一覧
+        snap_shot_times = []
+        time = start_unix_time
+        while timestamp_to - time > 0:
+            snap_shot_times.append(datetime.utcfromtimestamp(time))
+            time += SNAP_SHOT_INTERVAL_S
+
+        # task の作成
+        tasks = [self.__get_position_book(instrument, t, vicinity) for t in snap_shot_times]
+        results = await asyncio.gather(*tasks)  # *List とすることで、アンパックしている
+        return results
+
+    async def __get_position_book(self, instrument: str, date_time: datetime, vicinity: bool):
+        params = {
+            "time": date_time.isoformat() + "Z"
+        }
+        r = instruments.InstrumentsPositionBook(instrument, params)
+        try:
+            resp = self.__recursive_request(r)
+        except V20Error as err:
+            http_status_not_found = 404
+            if err.code == http_status_not_found:
+                return None
+            logging.error(err.msg)
+            return None
+        if vicinity:
+            range_n = 25
+            price = float(resp["positionBook"]["price"])
+            resp["positionBook"]["buckets"] = self.__extract_book_buckets_vicinity_of_price(
+                resp["positionBook"]["buckets"],
+                price,
+                range_n)
+            return resp["positionBook"]
+
     def __recursive_request(self, request):
         try:
             resp = self.__api.request(request)
@@ -123,7 +174,7 @@ class Client:
     @staticmethod
     def __convert_book_str_to_book_number(book):
         if not ("unixTime" in book):
-            date_time = datetime.strptime(book["time"].replace("Z") + "+0000", '%Y-%m-%dT%H:%M:%S%z')
+            date_time = datetime.strptime(book["time"].replace("Z", "") + "+0000", '%Y-%m-%dT%H:%M:%S%z')
             book["unixTime"] = date_time.timestamp()
         book["unixTime"] = float(book["unixTime"])
         book["price"] = float(book["price"])

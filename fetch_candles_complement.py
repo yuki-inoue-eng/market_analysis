@@ -1,21 +1,35 @@
+from oanda import Client
+import configparser
+import datetime
+import time
+
 if __name__ == '__main__':
-    import configparser
-    import datetime
-    import time
-    from oanda import Client
+    # fetch candles params
+    d_from = "2018-01-01"
+    d_to = "2019-01-01"
+    instrument = "NZD_USD"
+    granularity = "15S"
 
     config = configparser.ConfigParser()
     config.read("./oanda_config.txt")
     api_key = config["Practice"]["api_key"]
     oanda = Client(api_key, "", "practice")
-    date_from = datetime.datetime(2020, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
-    date_to = datetime.datetime(2021, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
+
+    d_from_year = int(d_from.split("-")[0])
+    d_from_month = int(d_from.split("-")[1])
+    d_from_date = int(d_from.split("-")[2])
+    d_to_year = int(d_to.split("-")[0])
+    d_to_month = int(d_to.split("-")[1])
+    d_to_date = int(d_to.split("-")[2])
+    date_from = datetime.datetime(d_from_year, d_from_month, d_from_date, 0, 0, tzinfo=datetime.timezone.utc)
+    date_to = datetime.datetime(d_to_year, d_to_month, d_to_date, 0, 0, tzinfo=datetime.timezone.utc)
+
     start = time.time()
-    candles_df = oanda.get_candles("NZD_USD", date_from, date_to, "S5")
+    candles_df = oanda.get_candles(instrument, date_from, date_to, "S5")
     elapsed_time = time.time() - start
     candles_df.columns = ["DateTime", "Open", "High", "Low", "Close", "Volume"]
     candles_df = candles_df.set_index("DateTime")
-    candles_df = candles_df.resample("15S").agg({
+    candles_df = candles_df.resample(granularity).agg({
         "Open": "first",
         "High": "max",
         "Low": "min",
@@ -23,4 +37,4 @@ if __name__ == '__main__':
         "Volume": "sum"
     })
     candles_df = candles_df.interpolate()
-    candles_df.to_csv("./data/candles/NZD_USD_S5_2020.csv")
+    candles_df.to_csv("./data/candles/{}_{}_{}_{}.csv".format(instrument, granularity, d_from, d_to))
