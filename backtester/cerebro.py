@@ -43,6 +43,7 @@ class Cerebro:
                     order.memo2,
                     order.memo3,
                 ))
+        self.recorder.aggregate()
 
     @staticmethod
     def __convert_feed_to_candles(feed: list):

@@ -33,6 +33,7 @@ class InvalidOrderCancelException(Exception):
     pass
 
 
+# 成行注文や決済を成行で行う場合は、指値・逆指値価格に None を入れてください
 class Order:
     MIN_STOP_DISTANCE_PIPS = 5
     MIN_LIMIT_DISTANCE_PIPS = 5

@@ -1,11 +1,14 @@
 from .orders import Order, Status, Side
 from .instruments import price_to_pips
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import pandas as pd
 
 
 class Recorder:
     def __init__(self):
         self.orders = {}  # key: id(int), value: order(order)
-        self.total_profit_pips = None
+        self.total_pips = None
         self.total_number_of_trades = self.__total_number_of_trades()
         self.win_rate = 0
 
@@ -14,9 +17,41 @@ class Recorder:
 
     def aggregate(self):
         self.__remove_canceled_order_record()
-        self.total_profit_pips = self.__sum_profit_margin_pips()
+        self.total_pips = self.__sum_profit_margin_pips()
         self.total_number_of_trades = self.__total_number_of_trades()
         self.win_rate = self.__calc_win_rate()
+
+    def result_pips_data_frame(self):
+        columns = ["datetime", "pips"]
+        dataset = []
+        for order in self.orders.values():
+            pips = self.__profit_margin_pips(order)
+            dataset.append([order.entered_datetime, 0])
+            dataset.append([order.closed_datetime, pips])
+        df = pd.DataFrame(dataset, columns=columns)
+        df = df.sort_values(by="datetime")  # ソート
+        df = df.assign(cumsum_pips=df["pips"].cumsum())  # 累積和の列を追加
+        return df
+
+    def plot(self):
+        df = self.result_pips_data_frame()
+        plt.figure(figsize=(16, 8))
+        plt.plot(df['datetime'], df["cumsum_pips"])
+
+        # ロケータで刻み幅を設定
+        xloc = mpl.dates.MonthLocator()
+        plt.gca().xaxis.set_major_locator(xloc)
+
+        # 時刻のフォーマットを設定
+        xfmt = mpl.dates.DateFormatter("%Y/%m")
+        plt.gca().xaxis.set_major_formatter(xfmt)
+
+        plt.show()
+
+    def print_result(self):
+        print("Total number of trades: {}".format(self.total_number_of_trades))
+        print("Total total_profit_pips: {} pips".format(self.total_pips))
+        print("Win rate: {}".format(self.win_rate))
 
     def __sum_profit_margin(self):
         sum_p = 0
