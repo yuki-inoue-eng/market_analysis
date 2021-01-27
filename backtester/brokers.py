@@ -88,40 +88,41 @@ class Broker:
     def __process_orders(self):
         candle = self.__current_candle
         for order in list(self.__orders.values()):
-            enter_execution_price = self.__spread_calculator.calculate_enter_execution_price(order)
-            stop_execution_price = self.__spread_calculator.calculate_stop_execution_price(order)
-            limit_execution_price = self.__spread_calculator.calculate_limit_execution_price(order)
+            if order.order_type is Type.MARKET_IF_TOUCHED:
+                enter_execution_price = self.__spread_calculator.calculate_enter_execution_price(order)
+                stop_execution_price = self.__spread_calculator.calculate_stop_execution_price(order)
+                limit_execution_price = self.__spread_calculator.calculate_limit_execution_price(order)
 
-            # enter
-            if order.price is not None \
-                    and order.status is Status.PENDING \
-                    and candle.is_include(enter_execution_price):
-                order.status = Status.ENTERED
-                order.entered_datetime = candle.date_time
-                order.entered_price = order.price
-                order.executed_enter_price = enter_execution_price
+                # enter
+                if order.price is not None \
+                        and order.status is Status.PENDING \
+                        and candle.is_include(enter_execution_price):
+                    order.status = Status.ENTERED
+                    order.entered_datetime = candle.date_time
+                    order.entered_price = order.price
+                    order.executed_enter_price = enter_execution_price
 
-            # stop
-            if order.stop_price is not None \
-                    and order.status is Status.ENTERED \
-                    and candle.is_touch_stop(order.side, stop_execution_price):
-                order.status = Status.EXITED
-                order.closed_datetime = candle.date_time
-                order.exited_price = order.stop_price
-                order.executed_exited_price = stop_execution_price
-                order.exited_type = ExitedType.STOP
-                self.__orders.pop(order.id)
+                # stop
+                if order.stop_price is not None \
+                        and order.status is Status.ENTERED \
+                        and candle.is_touch_stop(order.side, stop_execution_price):
+                    order.status = Status.EXITED
+                    order.closed_datetime = candle.date_time
+                    order.exited_price = order.stop_price
+                    order.executed_exited_price = stop_execution_price
+                    order.exited_type = ExitedType.STOP
+                    self.__orders.pop(order.id)
 
-            # limit
-            if order.limit_price is not None \
-                    and order.status is Status.ENTERED \
-                    and candle.is_touch_limit(order.side, limit_execution_price):
-                order.status = Status.EXITED
-                order.closed_datetime = candle.date_time
-                order.exited_price = order.limit_price
-                order.executed_exited_price = limit_execution_price
-                order.exited_type = ExitedType.LIMIT
-                self.__orders.pop(order.id)
+                # limit
+                if order.limit_price is not None \
+                        and order.status is Status.ENTERED \
+                        and candle.is_touch_limit(order.side, limit_execution_price):
+                    order.status = Status.EXITED
+                    order.closed_datetime = candle.date_time
+                    order.exited_price = order.limit_price
+                    order.executed_exited_price = limit_execution_price
+                    order.exited_type = ExitedType.LIMIT
+                    self.__orders.pop(order.id)
 
 
 class SpreadsCalculator:
