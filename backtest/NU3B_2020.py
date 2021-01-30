@@ -13,12 +13,11 @@ from backtester.orders import Order, Side, Type
 
 
 class NU3BStrategy(Strategy):
-    def __init__(self, order_books: dict, params: dict):
-        super().__init__()
+    def __init__(self, order_books: dict, position_book: dict, params: dict):
+        super().__init__(self.__build_params(params))
         self.__order_books = order_books
         self.__sliding_minutes = 5
         self.__instrument = Instrument.NZD_USD
-        self.__params = self.__build_params(params)
 
     @staticmethod
     def __build_params(params: dict):
@@ -27,7 +26,6 @@ class NU3BStrategy(Strategy):
         params["stopOrders"].append(params["stopOrders_2"])
         params["stopOrders"].append(params["stopOrders_3"])
         return params
-
 
     def on_candle(self, broker: Broker):
         if self.is_lambda_invoke_time() and self.is_restraint_time_zone():
@@ -44,7 +42,7 @@ class NU3BStrategy(Strategy):
             buckets = self.__order_books[time_stamp_str]
             new_orders = self.create_new_orders_logic_type_b(
                 self.__instrument,
-                self.__params,
+                self.params,
                 buckets,
                 current_price,
                 target_range=10,
@@ -72,7 +70,7 @@ class NU3BStrategy(Strategy):
     @staticmethod
     def close_all_entered_orders(broker: Broker):
         for order in broker.get_entered_orders():
-            broker.exit_order(order)
+            broker.market_exit_order(order)
 
     @staticmethod
     def create_new_orders_logic_type_b(instrument: Instrument, params: dict, buckets: list, current_price: float,
@@ -131,7 +129,7 @@ if __name__ == "__main__":
     order_books_json = open("../data/order_book/NZD_USD_OB_2020-01-01_2021-01-01.json")
     # read candles from csv file.
     with open("../data/candles/NZD_USD_15S_2020-01-01_2021-01-01.csv", "r") as read_obj:
-        feed = list(reader(read_obj))
+        feed = Cerebro.convert_feed_to_candles(list(reader(read_obj)))
 
     order_books = json.load(order_books_json)
 
@@ -146,11 +144,9 @@ if __name__ == "__main__":
 
     my_strategy = NU3BStrategy(order_books, params)
     cerebro = Cerebro(feed, my_strategy)
-    print("Start back test.")
     start = time.time()
+    print("Start back test.")
     cerebro.run()
-    cerebro.recorder.aggregate()
     print("Execution time: {}".format(time.time() - start))
-    print("Total number of trades: {}".format(cerebro.recorder.total_number_of_trades))
-    print("Total total_profit_pips: {} pips".format(cerebro.recorder.total_pips))
-    print("Win rate: {}".format(cerebro.recorder.win_rate))
+    cerebro.recorder.print_result()
+    cerebro.recorder.plot()
