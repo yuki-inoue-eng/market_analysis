@@ -4,7 +4,8 @@ from .brokers import Broker
 from .candles import Candle
 from .recorders import Recorder
 from .orders import Status
-import math
+import pandas as pd
+import os
 
 
 class InvalidFeedException(Exception):
@@ -12,11 +13,14 @@ class InvalidFeedException(Exception):
 
 
 class Cerebro:
-    def __init__(self, feed: list, strategy: Strategy):
-        self.__candles = self.__convert_feed_to_candles(feed)
+    def __init__(self, feed: list, strategy: Strategy, cerebro_no: int, export: bool):
+        self.__candles = feed
         self.__strategy = strategy
         self.recorder = Recorder()
         self.__broker = Broker(self.recorder)
+        self.cerebro_no = cerebro_no
+        self.result_dir_name = "default"
+        self.should_export = export
 
     def run(self):
         strategy = self.__strategy
@@ -28,25 +32,33 @@ class Cerebro:
             broker.set_current_candle(candle)
             strategy.on_candle(broker)
             broker.on_candles()
-
-        # TODO: trade log
-        for order in self.recorder.orders.values():
-            if order.status is Status.EXITED:
-                print("side:{} entered_price:{} exited_price:{}  entered:{}  exited:{}  exitedType:{}  memo:{} memo2:{} memo3:{}".format(
-                    order.side,
-                    round(order.entered_price*100000)/100000,
-                    round(order.exited_price*100000)/100000,
-                    order.entered_datetime,
-                    order.closed_datetime,
-                    order.exited_type,
-                    order.memo,
-                    order.memo2,
-                    order.memo3,
-                ))
+        print("completed cerebro: {}".format(self.cerebro_no))
         self.recorder.aggregate()
 
+        if self.should_export:
+            export_dir = "../result_data/trade_data/{}".format(self.result_dir_name)
+            os.makedirs(export_dir, exist_ok=True)
+            order_results = []
+            header = ["side", "entered_price", "exited_price", "entered_datetime", "exited_datetime", "exited_type"]
+            for order in self.recorder.orders.values():
+                if order.status is Status.EXITED:
+                    order_results.append([
+                        order.side,
+                        round(order.entered_price * 100000) / 100000,
+                        round(order.exited_price * 100000) / 100000,
+                        order.entered_datetime,
+                        order.closed_datetime,
+                        order.exited_type,
+                    ])
+            pd.DataFrame(order_results, columns=header).to_csv(export_dir + "/trades.csv", index=False)
+            params = []
+            for key, val in self.__strategy.params.items():
+                params.append([key, val])
+            pd.DataFrame(params).to_csv(export_dir + "/params.csv", index=False, header=False)
+            self.recorder.plt.savefig(export_dir + "/graph.png")
+
     @staticmethod
-    def __convert_feed_to_candles(feed: list):
+    def convert_feed_to_candles(feed: list):
         header = feed.pop(0)  # remove header
         if header != ["DateTime", "Open", "High", "Low", "Close", "Volume"]:
             raise InvalidFeedException("invalid feed columns: invalid header: {}".format(header))

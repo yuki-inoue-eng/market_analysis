@@ -10,7 +10,7 @@ class Recorder:
         self.orders = {}  # key: id(int), value: order(order)
         self.total_pips = None
         self.total_number_of_trades = self.__total_number_of_trades()
-        self.win_rate = 0
+        self.plt = None
 
     def record(self, order: Order):
         self.orders[order.id] = order
@@ -19,7 +19,7 @@ class Recorder:
         self.__remove_canceled_order_record()
         self.total_pips = self.__sum_profit_margin_pips()
         self.total_number_of_trades = self.__total_number_of_trades()
-        self.win_rate = self.__calc_win_rate()
+        self.make_graph()
 
     def result_pips_data_frame(self):
         columns = ["datetime", "pips"]
@@ -33,7 +33,7 @@ class Recorder:
         df = df.assign(cumsum_pips=df["pips"].cumsum())  # 累積和の列を追加
         return df
 
-    def plot(self):
+    def make_graph(self):
         df = self.result_pips_data_frame()
         plt.figure(figsize=(16, 8))
         plt.plot(df['datetime'], df["cumsum_pips"])
@@ -46,12 +46,14 @@ class Recorder:
         xfmt = mpl.dates.DateFormatter("%Y/%m")
         plt.gca().xaxis.set_major_formatter(xfmt)
 
-        plt.show()
+        self.plt = plt
+
+    def plot(self):
+        self.plt.show()
 
     def print_result(self):
         print("Total number of trades: {}".format(self.total_number_of_trades))
         print("Total total_profit_pips: {} pips".format(self.total_pips))
-        print("Win rate: {}".format(self.win_rate))
 
     def __sum_profit_margin(self):
         sum_p = 0

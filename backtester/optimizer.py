@@ -2,20 +2,28 @@ from .cerebro import Cerebro
 from itertools import product
 import concurrent.futures
 import numpy as np
+import pandas as pd
+import os
+import copy
 
 
 class Optimizer:
-    def __init__(self, order_books: dict, feed: list, param_ranges: dict, strategy):
+    def __init__(self, order_books: dict, position_books: dict, feed: list, param_ranges: dict, strategy):
         self.feed = feed
         self.strategy = strategy
+        self.param_ranges_dict = copy.copy(param_ranges)
         self.param_ranges = param_ranges
         self.__convert_param_ranges()
         self.all_params = self.__list_all_params()
         self.order_books = order_books
+        self.position_books = position_books
         self.results = []
+        self.result_dir_name = "default"
 
     def __convert_param_ranges(self):
         for k, param in self.param_ranges.items():
+            if type(param) is bool:
+                self.param_ranges[k] = [param]
             if type(param) is list:
                 new_param = []
                 for p in param:
@@ -42,37 +50,63 @@ class Optimizer:
 
     def optimize(self):
         print("number of pattern: {}".format(len(self.all_params)))
-        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-            futures = [executor.submit(self.__cerebro_run, params) for params in self.all_params]
+        with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
+            futures = [executor.submit(self.cerebro_run, self.all_params[i], i) for i in range(len(self.all_params))]
             concurrent.futures.wait(futures)  # futures が持つの全てのタスクの完了を待機する
             for future in futures:
                 self.results.append(future.result())
-        sorted(self.results, key=lambda x: x["total_pips"], reverse=True)
+        self.results = sorted(self.results, key=lambda x: x["total_pips"])
+        self.export()
 
-    def __cerebro_run(self, params):
-        cerebro = Cerebro(self.feed, self.strategy(self.order_books, params))
+    def cerebro_run(self, params, cerebro_no: int):
+        cerebro = Cerebro(self.feed, self.strategy(self.order_books, self.position_books, params, ), cerebro_no, False)
         cerebro.run()
-        cerebro.recorder.aggregate()
         result = {}
         for key, param in params.items():
             result[key] = param
         result["total_pips"] = cerebro.recorder.total_pips
         result["total_number_of_trades"] = cerebro.recorder.total_number_of_trades
-        result["win_rate"] = cerebro.recorder.win_rate
+        # result["win_rate"] = cerebro.recorder.win_rate
         return result
 
-    def export_csv(self):
-        pass
+    def export(self):
+        export_dir = "../result_data/optimize_data/{}".format(self.result_dir_name)
+        os.makedirs(export_dir, exist_ok=True)
+
+        # result
+        headers = []
+        for key in self.results[0].keys():
+            headers.append(key)
+        optimize_results = []
+        for result in self.results:
+            optimize_result = []
+            for key in headers:
+                optimize_result.append(result[key])
+            optimize_results.append(optimize_result)
+        pd.DataFrame(optimize_results, columns=headers).to_csv(export_dir + "/result.csv", index=False)
+
+        # params
+        headers = ["min", "max", "step"]
+        indexes = []
+        results = []
+        for key, val in self.param_ranges_dict.items():
+            indexes.append(key)
+            result = []
+            print(type(val))
+            if type(val) is dict:
+                for header in headers:
+                    result.append(val[header])
+            elif type(val) is bool:
+                result.append(val)
+            results.append(result)
+        print(headers)
+        print(indexes)
+        print(results)
+        pd.DataFrame(results, columns=headers, index=indexes).to_csv(export_dir + "/param_ranges.csv")
 
     def print_result(self):
         for result in self.results:
             print(result)
-
-    # @staticmethod
-    # def list_prod(param):
-    #     if type(param) is list:
-    #         return list(product(*param))
-    #     return param
 
 # if __name__ == "__main__":
 #     params = {

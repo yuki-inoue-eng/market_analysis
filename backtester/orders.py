@@ -64,7 +64,6 @@ class Order:
         self.executed_enter_price = None  # 注文実行価格
         self.executed_exited_price = None  # 注文実行価格
         self.exited_type = None
-
         self.memo = ""
         self.memo2 = ""
         self.memo3 = ""

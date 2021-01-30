@@ -3,8 +3,9 @@ from .candles import Candle
 
 
 class Strategy:
-    def __init__(self):
+    def __init__(self, params: dict):
         self.current_candle = None
+        self.params = params
 
     def set_current_candle(self, candle: Candle):
         self.current_candle = candle
