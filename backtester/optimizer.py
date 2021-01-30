@@ -99,9 +99,6 @@ class Optimizer:
             elif type(val) is bool:
                 result.append(val)
             results.append(result)
-        print(headers)
-        print(indexes)
-        print(results)
         pd.DataFrame(results, columns=headers, index=indexes).to_csv(export_dir + "/param_ranges.csv")
 
     def print_result(self):
