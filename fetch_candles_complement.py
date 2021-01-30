@@ -5,10 +5,10 @@ import time
 
 if __name__ == '__main__':
     # fetch candles params
-    d_from = "2018-01-01"
-    d_to = "2019-01-01"
+    d_from = "2019-01-01"
+    d_to = "2020-01-01"
     instrument = "NZD_USD"
-    granularity = "15S"
+    granularity = "1T"  # 1D:day, 1H:hour, 1T:minutes, 1S:seconds
 
     config = configparser.ConfigParser()
     config.read("./oanda_config.txt")

@@ -1,15 +1,13 @@
 from oanda import Client
 import configparser
 import datetime
-import json
 import time
-import math
 
 if __name__ == '__main__':
-    # fetch position books params
-    d_from = "2019-01-01"
-    d_to = "2020-01-01"
-    instrument = "EUR_USD"
+    # fetch order books params
+    d_from = "2021-01-01"
+    d_to = "2021-01-02"
+    instrument = "USD_JPY"
 
     config = configparser.ConfigParser()
     config.read("oanda_config.txt")
@@ -24,9 +22,14 @@ if __name__ == '__main__':
     date_from = datetime.datetime(d_from_year, d_from_month, d_from_date, 0, 0, tzinfo=datetime.timezone.utc)
     date_to = datetime.datetime(d_to_year, d_to_month, d_to_date, 0, 0, tzinfo=datetime.timezone.utc)
     start = time.time()
-    potition_books = oanda.get_position_books(instrument, date_from, date_to, True)
-    potition_books = {math.floor(o["unixTime"]): o["buckets"] for o in potition_books}  # 辞書型に変換
-    elapsed_time = time.time() - start
-    print(elapsed_time)
-    with open("./data/position_book/{}_OB_{}_{}.json".format(instrument, d_from, d_to), "w") as f:
-        json.dump(potition_books, f)
+    order_books = oanda.get_order_books(instrument, date_from, date_to, False)
+
+    for order_book in order_books:
+        so = 0
+        lo = 0
+        for b in order_book["buckets"]:
+            so += b["shortCountPercent"]
+            lo += b["longCountPercent"]
+        print("sum:{}".format(so+lo))
+
+
