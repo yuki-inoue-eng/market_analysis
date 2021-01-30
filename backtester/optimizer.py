@@ -1,4 +1,5 @@
 from .cerebro import Cerebro
+from .instruments import Instrument
 from itertools import product
 import concurrent.futures
 import numpy as np
@@ -8,9 +9,11 @@ import copy
 
 
 class Optimizer:
-    def __init__(self, order_books: dict, position_books: dict, feed: list, param_ranges: dict, strategy):
+    def __init__(self, feed: list, strategy, instrument: Instrument, param_ranges: dict, order_books: dict,
+                 position_books: dict):
         self.feed = feed
         self.strategy = strategy
+        self.instrument = instrument
         self.param_ranges_dict = copy.copy(param_ranges)
         self.param_ranges = param_ranges
         self.__convert_param_ranges()
@@ -35,7 +38,6 @@ class Optimizer:
     def __list_all_params(self):
         key_list = []
         p_list = []
-        print(self.param_ranges)
         for key, p_range in self.param_ranges.items():
             key_list.append(key)
             p_list.append(p_range)
@@ -59,7 +61,8 @@ class Optimizer:
         self.export()
 
     def cerebro_run(self, params, cerebro_no: int):
-        cerebro = Cerebro(self.feed, self.strategy(self.order_books, self.position_books, params, ), cerebro_no, False)
+        cerebro = Cerebro(self.feed, self.strategy(self.instrument, params, self.order_books, self.position_books),
+                          cerebro_no, False)
         cerebro.run()
         result = {}
         for key, param in params.items():
@@ -92,7 +95,6 @@ class Optimizer:
         for key, val in self.param_ranges_dict.items():
             indexes.append(key)
             result = []
-            print(type(val))
             if type(val) is dict:
                 for header in headers:
                     result.append(val[header])

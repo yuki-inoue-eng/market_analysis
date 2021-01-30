@@ -55,7 +55,7 @@ class Cerebro:
             for key, val in self.__strategy.params.items():
                 params.append([key, val])
             pd.DataFrame(params).to_csv(export_dir + "/params.csv", index=False, header=False)
-            self.recorder.plt.savefig(export_dir + "/graph.png")
+            self.recorder.make_graph().savefig(export_dir + "/graph.png")
 
     @staticmethod
     def convert_feed_to_candles(feed: list):

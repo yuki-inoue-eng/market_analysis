@@ -10,7 +10,6 @@ class Recorder:
         self.orders = {}  # key: id(int), value: order(order)
         self.total_pips = None
         self.total_number_of_trades = self.__total_number_of_trades()
-        self.plt = None
 
     def record(self, order: Order):
         self.orders[order.id] = order
@@ -19,7 +18,6 @@ class Recorder:
         self.__remove_canceled_order_record()
         self.total_pips = self.__sum_profit_margin_pips()
         self.total_number_of_trades = self.__total_number_of_trades()
-        self.make_graph()
 
     def result_pips_data_frame(self):
         columns = ["datetime", "pips"]
@@ -46,10 +44,10 @@ class Recorder:
         xfmt = mpl.dates.DateFormatter("%Y/%m")
         plt.gca().xaxis.set_major_formatter(xfmt)
 
-        self.plt = plt
+        return plt
 
     def plot(self):
-        self.plt.show()
+        self.make_graph().show()
 
     def print_result(self):
         print("Total number of trades: {}".format(self.total_number_of_trades))
