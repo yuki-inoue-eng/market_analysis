@@ -35,4 +35,4 @@ def divide_buckets_up_and_down(buckets: list, price: float):
         if b["price"] > price:
             break
         central += 1
-    return {"short": buckets[:central][::-1], "long": buckets[central:]}
+    return {"low": buckets[:central][::-1], "high": buckets[central:]}
