@@ -11,12 +11,6 @@ from backtester.orders import Order, Side, Type, Status
 from backtester.optimizer import Optimizer
 
 
-class OrderManager():
-    def __init__(self, order: Order, determined_price):
-        self.order = order
-        self.determined_price = determined_price  # エントリーの決手となった position book の価格
-
-
 class NU4EOrder(Order):
     def __init__(self, instrument: Instrument,
                  side: Side,
@@ -28,8 +22,8 @@ class NU4EOrder(Order):
                  determined_price: float
                  ):
         super().__init__(instrument, side, order_type, unit, price, limit_price, stop_price)
-        self.determined_price = determined_price
-        self.exit_count_percent = 0
+        self.determined_price = determined_price  # エントリーの決手となった position book の価格帯
+        self.exit_count_percent = 0  # ポジションクローズする際の count percent
 
     def should_close(self, current_position_book):
         percent = ""
@@ -175,6 +169,7 @@ class NU4EStrategy(Strategy):
             short_sum += low[i]["shortCountPercent"] + high[i]["shortCountPercent"]
             long_sum += low[i]["longCountPercent"] + high[i]["longCountPercent"]
         return (long_sum - short_sum) / (long_sum + short_sum)
+
 
 if __name__ == "__main__":
     # read position books from json file.
