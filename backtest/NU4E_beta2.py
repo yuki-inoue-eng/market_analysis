@@ -32,7 +32,7 @@ class NU4EOrder(Order):
         if self.side is Side.SELL:
             percent = "shortCountPercent"
         buckets = {}
-        for pb in current_position_book:
+        for pb in current_position_book["buckets"]:
             if pb["price"] == self.determined_price:
                 buckets = pb
         if self.status is Status.ENTERED:
@@ -48,11 +48,11 @@ class NU4EOrder(Order):
         if self.side is Side.SELL:
             percent = "shortCountPercent"
         now = 0
-        for pb in current_position_book:
+        for pb in current_position_book["buckets"]:
             if pb["price"] == self.determined_price:
                 now = pb[percent]
         before = 0
-        for pb in before_position_book:
+        for pb in before_position_book["buckets"]:
             if pb["price"] == self.determined_price:
                 before = pb[percent]
         self.exit_count_percent = now - (now - before) * exit_threshold
@@ -134,8 +134,8 @@ class NU4EStrategy(Strategy):
             percent = "shortCountPercent"
         if not self.current_position_book_is_exist() or not self.before_position_book_is_exist():
             return None
-        now_p_buckets = fx_lib.divide_buckets_up_and_down(self.current_position_book(), self.current_price())
-        before_p_buckets = fx_lib.divide_buckets_up_and_down(self.before_position_book(), self.current_price())
+        now_p_buckets = fx_lib.divide_buckets_up_and_down(self.current_position_book()["buckets"], self.current_price())
+        before_p_buckets = fx_lib.divide_buckets_up_and_down(self.before_position_book()["buckets"], self.current_price())
         for i in range(self.params["target_range"]):
             # low
             now = now_p_buckets["low"][i][percent]
@@ -160,7 +160,7 @@ class NU4EStrategy(Strategy):
         return (now - before) / before
 
     def calculate_slope_of_trend(self):
-        buckets = fx_lib.divide_buckets_up_and_down(self.before_position_book(), self.current_price())
+        buckets = fx_lib.divide_buckets_up_and_down(self.before_position_book()["buckets"], self.current_price())
         low = buckets["low"]
         high = buckets["high"]
         short_sum = 0
@@ -173,10 +173,10 @@ class NU4EStrategy(Strategy):
 
 if __name__ == "__main__":
     # read position books from json file.
-    position_books_json = open("../data/position_book/NZD_USD_OB_2020-01-01_2021-01-01.json")
+    position_books_json = open("../data/position_book/NZD_USD_OB_2019-01-01_2020-01-01.json")
     position_books = json.load(position_books_json)
     # read candles from csv file.
-    with open("../data/candles/NZD_USD_1T_2020-01-01_2021-01-01.csv", "r") as read_obj:
+    with open("../data/candles/NZD_USD_1T_2019-01-01_2020-01-01.csv", "r") as read_obj:
         feed = Cerebro.convert_feed_to_candles(list(reader(read_obj)))
 
     instrument = Instrument.NZD_USD
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     start = time.time()
     print("Start back test.")
     cerebro = Cerebro(feed, my_strategy, 0, True)
-    cerebro.result_dir_name = "NU4E_beta2_2020-2021"
+    cerebro.result_dir_name = "NU4E_beta2_20219-2020_jojojojojo"
     cerebro.run()
     print("Execution time: {}".format(time.time() - start))
     cerebro.recorder.print_result()

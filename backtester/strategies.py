@@ -56,7 +56,7 @@ class Strategy:
     @staticmethod
     def __book_is_exist(book: dict, timestamp: int):
         timestamp_str = str(math.floor(timestamp))
-        return timestamp_str in book and len(book[timestamp_str]) > 0
+        return timestamp_str in book and len(book[timestamp_str]["buckets"]) > 0
 
     def current_order_book_is_exist(self):
         return self.__book_is_exist(self.order_books, self.current_book_time_stamp())

@@ -1,4 +1,4 @@
-from .orders import Order, Status, Side
+from .orders import Order, Status, Side, ExitedType
 from .instruments import price_to_pips
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -8,8 +8,10 @@ import pandas as pd
 class Recorder:
     def __init__(self):
         self.orders = {}  # key: id(int), value: order(order)
-        self.total_pips = None
+        self.total_pips = self.__sum_profit_margin_pips()
+        self.total_number_of_touched_stop = self.__total_number_of_touched_stop()
         self.total_number_of_trades = self.__total_number_of_trades()
+        self.touched_stop_rate = 0
 
     def record(self, order: Order):
         self.orders[order.id] = order
@@ -17,7 +19,9 @@ class Recorder:
     def aggregate(self):
         self.__remove_canceled_order_record()
         self.total_pips = self.__sum_profit_margin_pips()
+        self.total_number_of_touched_stop = self.__total_number_of_touched_stop()
         self.total_number_of_trades = self.__total_number_of_trades()
+        self.touched_stop_rate = self.__calc_touched_stop_rate()
 
     def result_pips_data_frame(self):
         columns = ["datetime", "pips"]
@@ -74,6 +78,18 @@ class Recorder:
             if order.status is Status.EXITED:
                 n += 1
         return n
+
+    def __total_number_of_touched_stop(self):
+        n = 0
+        for order in self.orders.values():
+            if order.exited_type is ExitedType.STOP:
+                n += 1
+        return n
+
+    def __calc_touched_stop_rate(self):
+        if self.total_number_of_trades == 0:
+            return 0
+        return self.total_number_of_touched_stop / self.total_number_of_trades
 
     def __calc_win_rate(self):
         orders = []

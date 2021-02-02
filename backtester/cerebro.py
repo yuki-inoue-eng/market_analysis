@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime
 from .strategies import Strategy
 from .brokers import Broker
 from .candles import Candle
@@ -58,13 +58,15 @@ class Cerebro:
             self.recorder.make_graph().savefig(export_dir + "/graph.png")
 
     @staticmethod
-    def convert_feed_to_candles(feed: list):
+    def convert_feed_to_candles(feed: list, date_from: datetime, date_to: datetime):
         header = feed.pop(0)  # remove header
         if header != ["DateTime", "Open", "High", "Low", "Close", "Volume"]:
             raise InvalidFeedException("invalid feed columns: invalid header: {}".format(header))
         candles = []
         for f in feed:
-            candles.append(Candle(f))
+            canlde = Candle(f)
+            if date_from <= canlde.date_time <= date_to:
+                candles.append(Candle(f))
         candles = sorted(candles, key=lambda candle: candle.date_time)  # sort date_time
         return candles
 
