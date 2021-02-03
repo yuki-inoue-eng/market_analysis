@@ -10,6 +10,7 @@ class Recorder:
         self.orders = {}  # key: id(int), value: order(order)
         self.total_pips = self.__sum_profit_margin_pips()
         self.total_number_of_touched_stop = self.__total_number_of_touched_stop()
+        self.total_number_of_touched_limit = self.__total_number_of_touched_limit()
         self.total_number_of_trades = self.__total_number_of_trades()
         self.touched_stop_rate = 0
 
@@ -83,6 +84,13 @@ class Recorder:
         n = 0
         for order in self.orders.values():
             if order.exited_type is ExitedType.STOP:
+                n += 1
+        return n
+
+    def __total_number_of_touched_limit(self):
+        n = 0
+        for order in self.orders.values():
+            if order.exited_type is ExitedType.LIMIT:
                 n += 1
         return n
 

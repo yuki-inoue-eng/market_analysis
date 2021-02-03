@@ -69,6 +69,7 @@ class Optimizer:
             result[key] = param
         result["total_pips"] = cerebro.recorder.total_pips
         result["total_number_of_touched_stop"] = cerebro.recorder.total_number_of_touched_stop
+        result["total_number_of_touched_limit"] = cerebro.recorder.total_number_of_touched_limit
         result["touched_stop_rate"] = cerebro.recorder.touched_stop_rate
         result["total_number_of_trades"] = cerebro.recorder.total_number_of_trades
         # result["win_rate"] = cerebro.recorder.win_rate
