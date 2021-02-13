@@ -88,6 +88,24 @@ class Order:
     def is_active(self):
         return self.activated_datetime is not None and (self.status is Status.PENDING or self.status is Status.ENTERED)
 
+    def __is_win(self):
+        if self.side is Side.SELL:
+            return self.entered_price > self.exited_price
+        if self.side is Side.BUY:
+            return self.entered_price < self.exited_price
+
+    def win_or_lose(self):
+        if self.__is_win():
+            return "WIN"
+        else:
+            return "LOSE"
+
+    def acquired_pips(self):
+        if self.side is Side.SELL:
+            return price_to_pips(self.instrument, self.entered_price - self.exited_price)
+        if self.side is Side.BUY:
+            return price_to_pips(self.instrument, self.exited_price - self.entered_price)
+
     @property
     def price(self):
         return self._price

@@ -21,6 +21,7 @@ class Recorder:
         self.__remove_canceled_order_record()
         self.total_pips = self.__sum_profit_margin_pips()
         self.total_number_of_touched_stop = self.__total_number_of_touched_stop()
+        self.total_number_of_touched_limit = self.__total_number_of_touched_limit()
         self.total_number_of_trades = self.__total_number_of_trades()
         self.touched_stop_rate = self.__calc_touched_stop_rate()
 
@@ -46,7 +47,7 @@ class Recorder:
         plt.gca().xaxis.set_major_locator(xloc)
 
         # 時刻のフォーマットを設定
-        xfmt = mpl.dates.DateFormatter("%Y/%m")
+        xfmt = mpl.dates.DateFormatter("%Y/%m/%d")
         plt.gca().xaxis.set_major_formatter(xfmt)
 
         return plt

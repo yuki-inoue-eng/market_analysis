@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from .strategies import Strategy
 from .brokers import Broker
 from .candles import Candle
@@ -36,26 +36,34 @@ class Cerebro:
         self.recorder.aggregate()
 
         if self.should_export:
-            export_dir = "../result_data/trade_data/{}".format(self.result_dir_name)
-            os.makedirs(export_dir, exist_ok=True)
-            order_results = []
-            header = ["side", "entered_price", "exited_price", "entered_datetime", "exited_datetime", "exited_type"]
-            for order in self.recorder.orders.values():
-                if order.status is Status.EXITED:
-                    order_results.append([
-                        order.side,
-                        round(order.entered_price * 100000) / 100000,
-                        round(order.exited_price * 100000) / 100000,
-                        order.entered_datetime,
-                        order.closed_datetime,
-                        order.exited_type,
-                    ])
-            pd.DataFrame(order_results, columns=header).to_csv(export_dir + "/trades.csv", index=False)
-            params = []
-            for key, val in self.__strategy.params.items():
-                params.append([key, val])
-            pd.DataFrame(params).to_csv(export_dir + "/params.csv", index=False, header=False)
-            self.recorder.make_graph().savefig(export_dir + "/graph.png")
+            self.export()
+
+    def export(self):
+        export_dir = "../result_data/trade_data/{}".format(self.result_dir_name)
+        os.makedirs(export_dir, exist_ok=True)
+        order_results = []
+        header = ["side", "entered_price", "exited_price", "entered_datetime", "exited_datetime",
+                  "time_spent_trading (minutes)", "exited_type", "win_or_lose", "acquired_pips", "memo"]
+        for order in self.recorder.orders.values():
+            if order.status is Status.EXITED:
+                order_results.append([
+                    order.side,
+                    round(order.entered_price * 100000) / 100000,
+                    round(order.exited_price * 100000) / 100000,
+                    order.entered_datetime,
+                    order.closed_datetime,
+                    (order.closed_datetime - order.entered_datetime).seconds / 60,
+                    order.exited_type,
+                    order.win_or_lose(),
+                    order.acquired_pips(),
+                    order.memo
+                ])
+        pd.DataFrame(order_results, columns=header).to_csv(export_dir + "/trades.csv", index=False)
+        params = []
+        for key, val in self.__strategy.params.items():
+            params.append([key, val])
+        pd.DataFrame(params).to_csv(export_dir + "/params.csv", index=False, header=False)
+        self.recorder.make_graph().savefig(export_dir + "/graph.png")
 
     @staticmethod
     def convert_feed_to_candles(feed: list, date_from: datetime, date_to: datetime):
