@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from datetime import datetime
 from oandapyV20 import API
 from oandapyV20 import V20Error
@@ -14,7 +15,7 @@ class Client:
         # 接頭辞にアンスコ(_)付きの変数名はプライベート変数だが、あくまで紳士協定
         # 接頭辞にアンスコ*2(__)をつけると外からアクセスできなくなる
         if env == "Trade" or env == "trade":
-            self.__env = "trade"
+            self.__env = "live"
         else:
             self.__env = "practice"
         self.__api = API(api_key, self.__env)
@@ -72,7 +73,7 @@ class Client:
         # date_from 以降で最新の order book スナップショットが取られる時間を計算
         timestamp_from = math.floor(date_from.timestamp())
         timestamp_to = math.floor(date_to.timestamp())
-        SNAP_SHOT_INTERVAL_S = 1200
+        SNAP_SHOT_INTERVAL_S = 300
         start_unix_time = timestamp_from + (SNAP_SHOT_INTERVAL_S - timestamp_from % SNAP_SHOT_INTERVAL_S)
 
         # order_book を取得する時間の一覧
@@ -123,7 +124,7 @@ class Client:
         # date_from 以降で最新の position book スナップショットが取られる時間を計算
         timestamp_from = math.floor(date_from.timestamp())
         timestamp_to = math.floor(date_to.timestamp())
-        SNAP_SHOT_INTERVAL_S = 1200
+        SNAP_SHOT_INTERVAL_S = 300
         start_unix_time = timestamp_from + (SNAP_SHOT_INTERVAL_S - timestamp_from % SNAP_SHOT_INTERVAL_S)
 
         # position_book を取得する時間の一覧
