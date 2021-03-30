@@ -2,18 +2,20 @@ from oanda import Client
 import configparser
 import datetime
 import time
+import os
+import sys
 
 if __name__ == '__main__':
     # fetch candles params
-    d_from = "2019-01-01"
-    d_to = "2020-01-01"
-    instrument = "NZD_USD"
-    granularity = "1T"  # 1D:day, 1H:hour, 1T:minutes, 1S:seconds
+    d_from = sys.argv[2]
+    d_to = sys.argv[3]
+    instrument = sys.argv[1]
+    granularity = sys.argv[4]  # 1D:day, 1H:hour, 1T:minutes, 1S:seconds
 
     config = configparser.ConfigParser()
     config.read("./oanda_config.txt")
     api_key = config["Practice"]["api_key"]
-    oanda = Client(api_key, "", "practice")
+    oanda = Client(api_key, "", os.environ['ENV'])
 
     d_from_year = int(d_from.split("-")[0])
     d_from_month = int(d_from.split("-")[1])
