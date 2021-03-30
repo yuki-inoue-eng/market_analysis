@@ -11,7 +11,7 @@ else ifndef t
 else ifndef g
 	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY t=2020-01-01 f=2021-01-01 g=1T\033[0m'"
 else
-	ENV=Trade python ./fetch_candles_complement.py ${i} ${f} ${t} ${g}
+	ENV=Trade python3 ./fetch_candles_complement.py ${i} ${f} ${t} ${g}
 endif
 
 .PHONY: fetch_order_books
@@ -23,7 +23,7 @@ else ifndef f
 else ifndef t
 	@bash -c "echo -e '\033[36mUsage: make fetch_order_books i=USD_JPY t=2020-01-01 f=2021-01-01\033[0m'"
 else
-	ENV=Trade python ./fetch_order_books.py ${i} ${f} ${t}
+	ENV=Trade python3 ./fetch_order_books.py ${i} ${f} ${t}
 endif
 
 .PHONY: fetch_position_books
@@ -35,7 +35,7 @@ else ifndef f
 else ifndef t
 	@bash -c "echo -e '\033[36mUsage: make fetch_position_books i=USD_JPY t=2020-01-01 f=2021-01-01\033[0m'"
 else
-	ENV=Trade python ./fetch_position_books.py ${i} ${f} ${t}
+	ENV=Trade python3 ./fetch_position_books.py ${i} ${f} ${t}
 endif
 
 # See "Self-Documented Makefile" article
