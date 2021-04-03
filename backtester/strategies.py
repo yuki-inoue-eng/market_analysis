@@ -24,7 +24,7 @@ class Strategy:
 
     @staticmethod
     def __is_order_book_update_time(date_time: datetime):
-        return math.floor(date_time.timestamp()) % 1200 == 0
+        return math.floor(date_time.timestamp()) % 300 == 0
 
     def is_lambda_invoke_time(self):
         dt = self.current_candle.date_time - timedelta(minutes=self.sliding_minutes)

@@ -3,13 +3,13 @@
 .PHONY: fetch_candles
 fetch_candles: ## fetch candles
 ifndef i
-	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY t=2020-01-01 f=2021-01-01 g=1T\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY f=2020-01-01 t=2021-01-01 g=1T\033[0m'"
 else ifndef f
-	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY t=2020-01-01 f=2021-01-01 g=1T\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY f=2020-01-01 t=2021-01-01 g=1T\033[0m'"
 else ifndef t
-	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY t=2020-01-01 f=2021-01-01 g=1T\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY f=2020-01-01 t=2021-01-01 g=1T\033[0m'"
 else ifndef g
-	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY t=2020-01-01 f=2021-01-01 g=1T\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_candles i=USD_JPY f=2020-01-01 t=2021-01-01 g=1T\033[0m'"
 else
 	ENV=Trade python3 ./fetch_candles_complement.py ${i} ${f} ${t} ${g}
 endif
@@ -17,11 +17,11 @@ endif
 .PHONY: fetch_order_books
 fetch_order_books: ## fetch order books
 ifndef i
-	@bash -c "echo -e '\033[36mUsage: make fetch_order_books i=USD_JPY t=2020-01-01 f=2021-01-01\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_order_books i=USD_JPY f=2020-01-01 t=2021-01-01\033[0m'"
 else ifndef f
-	@bash -c "echo -e '\033[36mUsage: make fetch_order_books i=USD_JPY t=2020-01-01 f=2021-01-01\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_order_books i=USD_JPY f=2020-01-01 t=2021-01-01\033[0m'"
 else ifndef t
-	@bash -c "echo -e '\033[36mUsage: make fetch_order_books i=USD_JPY t=2020-01-01 f=2021-01-01\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_order_books i=USD_JPY f=2020-01-01 t=2021-01-01\033[0m'"
 else
 	ENV=Trade python3 ./fetch_order_books.py ${i} ${f} ${t}
 endif
@@ -29,11 +29,11 @@ endif
 .PHONY: fetch_position_books
 fetch_position_books: ## fetch position books
 ifndef i
-	@bash -c "echo -e '\033[36mUsage: make fetch_position_books i=USD_JPY t=2020-01-01 f=2021-01-01\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_position_books i=USD_JPY f=2020-01-01 t=2021-01-01\033[0m'"
 else ifndef f
-	@bash -c "echo -e '\033[36mUsage: make fetch_position_books i=USD_JPY t=2020-01-01 f=2021-01-01\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_position_books i=USD_JPY f=2020-01-01 t=2021-01-01\033[0m'"
 else ifndef t
-	@bash -c "echo -e '\033[36mUsage: make fetch_position_books i=USD_JPY t=2020-01-01 f=2021-01-01\033[0m'"
+	@bash -c "echo -e '\033[36mUsage: make fetch_position_books i=USD_JPY f=2020-01-01 t=2021-01-01\033[0m'"
 else
 	ENV=Trade python3 ./fetch_position_books.py ${i} ${f} ${t}
 endif
